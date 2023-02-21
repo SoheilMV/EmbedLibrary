@@ -60,11 +60,11 @@
   <ItemGroup>
     <Compile Include="Core\Library\Loader.cs" />
     <Compile Include="Core\Library\Embed.cs" />
+    <Compile Include="dnlib\Inject\Injection.cs" />
+    <Compile Include="dnlib\Inject\InjectMapper.cs" />
     <Compile Include="dnlib\Load\AssemblyLoader.cs" />
     <Compile Include="dnlib\Extensions\Extension.cs" />
-    <Compile Include="dnlib\Inject\ResourceManagement.cs" />
-    <Compile Include="dnlib\Inject\InjectContext.cs" />
-    <Compile Include="dnlib\Inject\InjectHelper.cs" />
+    <Compile Include="dnlib\Resources\ResourceManagement.cs" />
     <Compile Include="dnlib\Load\ModuleContext2.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

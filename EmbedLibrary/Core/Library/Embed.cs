@@ -1,7 +1,7 @@
-﻿using System.IO;
+﻿using System.Linq;
+using System.IO;
 using System.IO.Compression;
 using dnlib.Load;
-using dnlib.Inject;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -20,16 +20,13 @@ namespace EmbedLibrary.Core.Library
                 context.Resources.Add($"Embedded.{name}", zip);
             }
 
-            //Add a new class
-            TypeDef loadClass = new TypeDefUser("EmbedLibrary", "AssemblyLoader", context.Module.CorLibTypes.Object.TypeDefOrRef);
-            context.Module.Types.Add(loadClass);
-
-            //Inject functions into class
+            //Class injection
             var typeDef = context.GetTypeDef(typeof(Loader));
-            var members = InjectHelper.Inject(typeDef, loadClass, context.Module);
+            var copyTypeDef = context.CopyTypeDef(typeDef, "AssemblyLoader", "EmbedLibrary");
+            context.Module.Types.Add(copyTypeDef);
 
             //Call the load method in the <Module> class
-            var method = context.GetMethodDef(members, "Load"); //(MethodDef)members.Single(method => method.Name == "Load");
+            var method = (MethodDef)copyTypeDef.Methods.Single(m => m.Name == "Load");
             context.GlobalTypeStaticConstructor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, method));
         }
 

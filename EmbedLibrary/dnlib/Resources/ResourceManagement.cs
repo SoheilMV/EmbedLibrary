@@ -1,8 +1,7 @@
-﻿using dnlib.DotNet;
+﻿using System.IO;
 using dnlib.Load;
-using System.IO;
 
-namespace dnlib.Inject
+namespace dnlib.DotNet.Resources
 {
     public class ResourceManagement
     {

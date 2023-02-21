@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using dnlib.DotNet;
+using dnlib.DotNet.Resources;
 using dnlib.Inject;
 
 namespace dnlib.Load
@@ -47,25 +47,6 @@ namespace dnlib.Load
             return typeDef;
         }
 
-        public MethodDef GetMethodDef(Type type, string name)
-        {
-            var typeDef = GetTypeDef(type);
-            var method = typeDef.Methods.Single(m => m.Name == name);
-            return method;
-        }
-
-        public MethodDef GetMethodDef(TypeDef typeDef, string name)
-        {
-            var method = typeDef.Methods.Single(m => m.Name == name);
-            return method;
-        }
-
-        public MethodDef GetMethodDef(IEnumerable<IDnlibDef> members, string name)
-        {
-            var method = (MethodDef)members.Single(m => m.Name == name);
-            return method;
-        }
-
         public AssemblyRefUser GetAssemblyRefUser(string path)
         {
             var assembly = System.Reflection.Assembly.LoadFile(path);
@@ -79,40 +60,48 @@ namespace dnlib.Load
             return Module.GetAssemblyRefs();
         }
 
-        public TypeDef CopyType(Type type)
+        public void Merge(Type type)
         {
             var typeDef = GetTypeDef(type);
-            var newTypeDef = InjectHelper.Inject(typeDef, Module);
-            return newTypeDef;
+            Injection injection = new Injection(Module);
+            injection.Inject(typeDef);
+        }
+
+        public void Merge(TypeDef typeDef)
+        {
+            Injection injection = new Injection(Module);
+            injection.Inject(typeDef);
         }
 
         public TypeDef CopyTypeDef(TypeDef typeDef)
         {
-            var newTypeDef = InjectHelper.Inject(typeDef, Module);
+            TypeDef newTypeDef;
+            Injection injection = new Injection(Module);
+            injection.Inject(typeDef, out newTypeDef);
             return newTypeDef;
         }
 
-        public MethodDef CopyMethodDef(MethodDef methodDef)
+        public TypeDef CopyTypeDef(TypeDef typeDef, string name)
         {
-            var newMethodDef = InjectHelper.Inject(methodDef, Module);
-            return newMethodDef;
+            TypeDef newTypeDef;
+            Injection injection = new Injection(Module);
+            injection.Inject(typeDef, out newTypeDef);
+
+            newTypeDef.Name = name;
+
+            return newTypeDef;
         }
 
-        public IEnumerable<IDnlibDef> Merge(Type type)
+        public TypeDef CopyTypeDef(TypeDef typeDef, string name, string nameSpace)
         {
-            var typeDef = GetTypeDef(type);
-            var newTypeDef = InjectHelper.Clone(typeDef);
-            Module.Types.Add(newTypeDef);
-            var members = InjectHelper.Inject(typeDef, newTypeDef, Module);
-            return members;
-        }
+            TypeDef newTypeDef;
+            Injection injection = new Injection(Module);
+            injection.Inject(typeDef, out newTypeDef);
 
-        public IEnumerable<IDnlibDef> Merge(TypeDef typeDef)
-        {
-            var newTypeDef = InjectHelper.Clone(typeDef);
-            Module.Types.Add(newTypeDef);
-            var members = InjectHelper.Inject(typeDef, newTypeDef, Module);
-            return members;
+            newTypeDef.Name = name;
+            newTypeDef.Namespace = nameSpace;
+
+            return newTypeDef;
         }
     }
 }
