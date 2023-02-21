@@ -9,7 +9,7 @@ namespace EmbedLibrary.Core.Library
 {
     public class Embed
     {
-        public static void Execute(ModuleContext2 context, string[] librarys)
+        public static void Execute(AssemblyContext context, string[] librarys)
         {
             //Inject librarys to resource
             foreach (var path in librarys)

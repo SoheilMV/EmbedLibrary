@@ -67,7 +67,7 @@ namespace EmbedLibrary
             {
                 using (AssemblyLoader assembly = new AssemblyLoader(_file))
                 {
-                    ModuleContext2 context = assembly.GetContext2();
+                    AssemblyContext context = assembly.GetAssemblyContext();
                     Embed.Execute(context, _librarys.ToArray());
                     string address = Address(_file);
                     assembly.Write(address);

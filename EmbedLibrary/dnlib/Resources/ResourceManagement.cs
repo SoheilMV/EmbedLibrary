@@ -5,9 +5,9 @@ namespace dnlib.DotNet.Resources
 {
     public class ResourceManagement
     {
-        private ModuleContext2 _context = null;
+        private AssemblyContext _context = null;
 
-        public ResourceManagement(ModuleContext2 context)
+        public ResourceManagement(AssemblyContext context)
         {
             _context = context;
         }

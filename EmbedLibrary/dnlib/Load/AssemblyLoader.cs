@@ -57,9 +57,9 @@ namespace dnlib.Load
             }
         }
 
-        public ModuleContext2 GetContext2()
+        public AssemblyContext GetAssemblyContext()
         {
-            return ModuleDefMD.GetModuleContext2();
+            return ModuleDefMD.GetAssemblyContext();
         }
 
         public void Dispose()

@@ -6,7 +6,7 @@ using dnlib.Inject;
 
 namespace dnlib.Load
 {
-	public class ModuleContext2
+	public class AssemblyContext
     {
         private ResourceManagement _resources = null;
 
@@ -20,7 +20,7 @@ namespace dnlib.Load
         public MethodDef GlobalTypeStaticConstructor { get; private set; }
         public ResourceManagement Resources { get { return _resources; } }
 
-        public ModuleContext2(ModuleDefMD module)
+        public AssemblyContext(ModuleDefMD module)
 		{
             ModuleMD = module;
 

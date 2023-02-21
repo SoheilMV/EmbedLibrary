@@ -12,9 +12,9 @@ namespace dnlib.Extensions
 {
     public static class Extension
     {
-        public static ModuleContext2 GetModuleContext2(this ModuleDefMD module)
+        public static AssemblyContext GetAssemblyContext(this ModuleDefMD module)
         {
-            return new ModuleContext2(module);
+            return new AssemblyContext(module);
         }
     }
 }
