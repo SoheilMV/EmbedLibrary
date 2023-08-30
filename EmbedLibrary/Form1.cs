@@ -1,9 +1,14 @@
 ﻿using System;
-using System.Windows.Forms;
 using System.IO;
+using System.Windows.Forms;
 using System.Collections.Generic;
-using EmbedLibrary.Core.Library;
 using dnlib.Load;
+using EmbedLibrary.Core.Library;
+using dnlib.DotNet;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace EmbedLibrary
 {
@@ -57,41 +62,42 @@ namespace EmbedLibrary
 
         private void btnClear_Click(object sender, EventArgs e)
         {
-            _librarys.Clear();
-            lbLibrarys.Items.Clear();
+            Clear();
         }
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(_file) && _librarys.Count > 0)
+            if (!string.IsNullOrEmpty(_file))
             {
-                using (AssemblyLoader assembly = new AssemblyLoader(_file))
-                {
-                    AssemblyContext context = assembly.GetAssemblyContext();
-                    Embed.Execute(context, _librarys.ToArray());
-                    string address = Address(_file);
-                    assembly.Write(address);
-                }
-                if (Path.GetExtension(_file) == ".dll")
-                {
-                    string name = Path.GetFileName(_file).Replace(".dll", string.Empty);
-                    string dir = Path.GetDirectoryName(_file);
-                    if (File.Exists($"{dir}\\{name}.runtimeconfig.json"))
-                    {
-                        try
-                        {
-                            File.Copy($"{dir}\\{name}.exe", Address($"{dir}\\{name}.exe"));
-                            File.Copy($"{dir}\\{name}.runtimeconfig.json", Address($"{dir}\\{name}.runtimeconfig.json"));
-                        }
-                        catch
-                        {
-                        }
-                    }
-                }
-                MessageBox.Show("Completed!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Task.Factory.StartNew(() => { Execute(chkAutomatically.Checked, chkWritePdb.Checked); });
             }
             else
-                MessageBox.Show("Please select the file and required libraries!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Please select the desired program!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void chkAutomatically_CheckedChanged(object sender, EventArgs e)
+        {
+            Clear();
+            btnAdd.Enabled = !chkAutomatically.Checked;
+            btnClear.Enabled = !chkAutomatically.Checked;
+        }
+
+        private void menuLatestRelease_Click(object sender, EventArgs e)
+        {
+            OpenUrl("https://github.com/SoheilMV/EmbedLibrary/releases");
+        }
+
+        private void menuSourceCode_Click(object sender, EventArgs e)
+        {
+            OpenUrl("https://github.com/SoheilMV/EmbedLibrary");
+        }
+
+        private void menuAbout_Click(object sender, EventArgs e)
+        {
+            FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly().Location);
+            string version = $"{versionInfo.ProductMajorPart}.{versionInfo.ProductMinorPart}";
+            string copyright = versionInfo.LegalCopyright;
+            MessageBox.Show($"Developed by 'Soheil MV'\n\nVersion {version}\n{copyright}", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void txtName_DragDrop(object sender, DragEventArgs e)
@@ -132,41 +138,41 @@ namespace EmbedLibrary
 
         private void lbLibrarys_DragDrop(object sender, DragEventArgs e)
         {
-            try
+            if (!chkAutomatically.Checked)
             {
-                Array array = (Array)e.Data.GetData(DataFormats.FileDrop);
-                if (array != null)
+                try
                 {
-                    foreach (var file in array)
+                    Array array = (Array)e.Data.GetData(DataFormats.FileDrop);
+                    if (array != null)
                     {
-                        string path = file.ToString();
-                        int num = path.LastIndexOf(".");
-                        if (num != -1)
+                        foreach (var file in array)
                         {
-                            string a = path.Substring(num).ToLower();
-                            if (a == ".dll")
+                            string path = file.ToString();
+                            int num = path.LastIndexOf(".");
+                            if (num != -1)
                             {
-                                base.Activate();
-                                _librarys.Add(path);
-                                lbLibrarys.Items.Add(Path.GetFileName(path));
+                                string a = path.Substring(num).ToLower();
+                                if (a == ".dll")
+                                {
+                                    base.Activate();
+                                    Add(path);
+                                }
                             }
                         }
                     }
                 }
-            }
-            catch
-            {
+                catch
+                {
+                }
             }
         }
 
         private void lbLibrarys_DragEnter(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && !chkAutomatically.Checked)
                 e.Effect = DragDropEffects.Copy;
-                return;
-            }
-            e.Effect = DragDropEffects.None;
+            else
+                e.Effect = DragDropEffects.None;
         }
 
         private string Address(string path)
@@ -180,6 +186,124 @@ namespace EmbedLibrary
             if (File.Exists(file))
                 File.Delete(file);
             return file;
+        }
+
+        private void Clear()
+        {
+            this.Invoke((MethodInvoker)delegate {
+                _librarys.Clear();
+                lbLibrarys.Items.Clear();
+            });
+        }
+
+        private void Add(string path)
+        {
+            this.Invoke((MethodInvoker)delegate {
+                _librarys.Add(path);
+                lbLibrarys.Items.Add(Path.GetFileName(path));
+            });
+        }
+
+        private void GetRefs(string file)
+        {
+            using (AssemblyLoader assembly = new AssemblyLoader(file))
+            {
+                string dir = Path.GetDirectoryName(file);
+                var refs = assembly.ModuleDefMD.GetAssemblyRefs();
+                foreach (AssemblyRef asmRef in refs)
+                {
+                    if (!string.IsNullOrEmpty(dir))
+                    {
+                        string path = $"{Path.Combine(dir, asmRef.Name)}.dll";
+                        if (File.Exists(path) && !_librarys.Contains(path))
+                        {
+                            Add(path);
+                            GetRefs(path);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void Execute(bool automatically, bool writePdb)
+        {
+            if (automatically)
+            {
+                Clear();
+                GetRefs(_file);
+            }
+
+            if (_librarys.Count > 0)
+            {
+                using (AssemblyLoader assembly = new AssemblyLoader(_file))
+                {
+                    AssemblyContext context = assembly.GetAssemblyContext();
+                    Embed.Execute(context, _librarys.ToArray());
+                    string address = Address(_file);
+                    assembly.Write(address, writePdb);
+                }
+
+                if (Path.GetExtension(_file) == ".dll")
+                {
+                    string name = Path.GetFileNameWithoutExtension(_file);
+                    string dir = Path.GetDirectoryName(_file);
+                    if (File.Exists($"{dir}\\{name}.runtimeconfig.json"))
+                    {
+                        try
+                        {
+                            File.Copy($"{dir}\\{name}.exe", Address($"{dir}\\{name}.exe"));
+                            File.Copy($"{dir}\\{name}.runtimeconfig.json", Address($"{dir}\\{name}.runtimeconfig.json"));
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+
+                MessageBox.Show("Completed!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+                MessageBox.Show("Please select the desired libraries!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        public bool OpenUrl(string url)
+        {
+            Process p = null;
+            bool success = true;
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.OSDescription.Contains("microsoft-standard");
+            try
+            {
+                p = Process.Start(new ProcessStartInfo(url)
+                {
+                    UseShellExecute = isWindows
+                });
+            }
+            catch
+            {
+                if (isWindows)
+                {
+                    url = url.Replace("&", "^&");
+                    try
+                    {
+                        p = Process.Start(new ProcessStartInfo("cmd.exe", "/c start " + url)
+                        {
+                            CreateNoWindow = true
+                        });
+                    }
+                    catch
+                    {
+                        success = false;
+                    }
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    p = Process.Start("xdg-open", url);
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    p = Process.Start("open", url);
+                else
+                    success = false;
+            }
+            p?.Dispose();
+            return success;
         }
     }
 }

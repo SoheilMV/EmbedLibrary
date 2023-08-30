@@ -27,28 +27,32 @@ namespace dnlib.Load
             }
         }
 
-        public void Write(string path)
+        public void Write(string path, bool writePdb = true)
         {
             try
             {
                 if (ModuleDefMD.IsILOnly)
                 {
-                    ModuleDefMD.Write(path, new ModuleWriterOptions(ModuleDefMD)
+                    var options = new ModuleWriterOptions(ModuleDefMD)
                     {
                         MetadataOptions = { Flags = MetadataFlags.PreserveAll },
                         PEHeadersOptions = { NumberOfRvaAndSizes = 0x10 },
                         Logger = DummyLogger.NoThrowInstance,
-                        WritePdb = true
-                    });
+                        WritePdb = writePdb
+                    };
+
+                    ModuleDefMD.Write(path, options);
                 }
                 else
                 {
-                    ModuleDefMD.NativeWrite(path, new NativeModuleWriterOptions(ModuleDefMD, true)
+                    var options = new NativeModuleWriterOptions(ModuleDefMD, true)
                     {
                         MetadataOptions = { Flags = MetadataFlags.PreserveAll },
                         Logger = DummyLogger.NoThrowInstance,
-                        WritePdb = true
-                    });
+                        WritePdb = writePdb
+                    };
+
+                    ModuleDefMD.NativeWrite(path, options);
                 }
             }
             catch

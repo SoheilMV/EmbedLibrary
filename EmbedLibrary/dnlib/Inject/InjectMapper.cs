@@ -96,12 +96,5 @@ namespace dnlib.Inject
                 return MemberRefMaps[source];
             return null;
         }
-
-        public override TypeRef Map(Type source)
-        {
-            if (TypeRefMaps.ContainsKey(source))
-                return TypeRefMaps[source];
-            return null;
-        }
     }
 }
