@@ -1,6 +1,7 @@
 ﻿using dnlib.DotNet;
 using dnlib.DotNet.Writer;
 using dnlib.Extensions;
+using dnlib.PE;
 using System;
 using System.IO;
 
@@ -33,10 +34,12 @@ namespace dnlib.Load
             {
                 if (ModuleDefMD.IsILOnly)
                 {
+                    IImageOptionalHeader optionalHeader = ModuleDefMD.Metadata.PEImage.ImageNTHeaders.OptionalHeader;
+                    uint numberOfRvaAndSizes = optionalHeader.NumberOfRvaAndSizes;
                     var options = new ModuleWriterOptions(ModuleDefMD)
                     {
                         MetadataOptions = { Flags = MetadataFlags.PreserveAll },
-                        PEHeadersOptions = { NumberOfRvaAndSizes = 0x10 },
+                        PEHeadersOptions = { NumberOfRvaAndSizes = numberOfRvaAndSizes },
                         Logger = DummyLogger.NoThrowInstance,
                         WritePdb = writePdb
                     };
