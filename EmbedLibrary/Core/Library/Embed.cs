@@ -11,7 +11,7 @@ namespace EmbedLibrary.Core.Library
     {
         public static void Execute(AssemblyContext context, string[] librarys)
         {
-            //Inject librarys to resource
+            //Embedding libraries into resources for dynamic usage
             foreach (var path in librarys)
             {
                 string name = Path.GetFileName(path);
@@ -22,12 +22,13 @@ namespace EmbedLibrary.Core.Library
 
             //Class injection
             var typeDef = context.GetTypeDef(typeof(Loader));
-            var copyTypeDef = context.CopyTypeDef(typeDef, "AssemblyLoader", "EmbedLibrary");
-            context.Module.Types.Add(copyTypeDef);
-
-            //Call the load method in the <Module> class
-            var method = (MethodDef)copyTypeDef.Methods.Single(m => m.Name == "Load");
-            context.GlobalTypeStaticConstructor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, method));
+            var copyTypeDef = context.Merge(typeDef, "AssemblyLoader", "EmbedLibrary");
+            if (copyTypeDef != null)
+            {
+                //Call the load method in the <Module> class
+                var method = copyTypeDef.Methods.Single(m => m.Name == "Load");
+                context.GlobalTypeStaticConstructor.Body.Instructions.Insert(0, Instruction.Create(OpCodes.Call, method));
+            }
         }
 
         //https://stackoverflow.com/questions/10599596/compress-and-decompress-a-stream-with-compression-deflatestream

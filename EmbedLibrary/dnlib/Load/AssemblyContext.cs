@@ -60,48 +60,44 @@ namespace dnlib.Load
             return Module.GetAssemblyRefs();
         }
 
-        public void Merge(Type type)
+        public TypeDef Merge(Type source)
         {
-            var typeDef = GetTypeDef(type);
+            TypeDef target;
+            var sourceTypeDef = GetTypeDef(source);
             Injection injection = new Injection(Module);
-            injection.Inject(typeDef);
+            injection.TryInject(sourceTypeDef, out target);
+            return target;
         }
 
-        public void Merge(TypeDef typeDef)
+        public TypeDef Merge(TypeDef source)
         {
+            TypeDef target;
             Injection injection = new Injection(Module);
-            injection.Inject(typeDef);
+            injection.TryInject(source, out target);
+            return target;
         }
 
-        public TypeDef CopyTypeDef(TypeDef typeDef)
+        public TypeDef Merge(TypeDef source, string name)
         {
-            TypeDef newTypeDef;
+            TypeDef target;
             Injection injection = new Injection(Module);
-            injection.Inject(typeDef, out newTypeDef);
-            return newTypeDef;
+            if (injection.TryInject(source, out target))
+            {
+                target.Name = name;
+            }
+            return target;
         }
 
-        public TypeDef CopyTypeDef(TypeDef typeDef, string name)
+        public TypeDef Merge(TypeDef source, string name, string nameSpace)
         {
-            TypeDef newTypeDef;
+            TypeDef target;
             Injection injection = new Injection(Module);
-            injection.Inject(typeDef, out newTypeDef);
-
-            newTypeDef.Name = name;
-
-            return newTypeDef;
-        }
-
-        public TypeDef CopyTypeDef(TypeDef typeDef, string name, string nameSpace)
-        {
-            TypeDef newTypeDef;
-            Injection injection = new Injection(Module);
-            injection.Inject(typeDef, out newTypeDef);
-
-            newTypeDef.Name = name;
-            newTypeDef.Namespace = nameSpace;
-
-            return newTypeDef;
+            if (injection.TryInject(source, out target))
+            {
+                target.Name = name;
+                target.Namespace = nameSpace;
+            }
+            return target;
         }
     }
 }
